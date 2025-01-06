@@ -29,24 +29,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: 检出当前仓库代码
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      # Step 2: 设置自定义 JDK 版本
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ github.event.inputs.java_version }}
 
-      # Step 3: 克隆用户提供的项目仓库
       - name: Clone project repository
         run: |
           echo "Cloning repository: ${{ github.event.inputs.project_url }}"
           git clone --depth=1 ${{ github.event.inputs.project_url }} project
 
-      # Step 4: 安装自定义 Gradle 版本
       - name: Install Gradle
         run: |
           echo "Installing Gradle version: ${{ github.event.inputs.gradle_version }}"
@@ -55,14 +51,13 @@ jobs:
           unzip -d /home/runner/gradle gradle-${{ github.event.inputs.gradle_version }}-bin.zip
           export PATH="/home/runner/gradle/gradle-${{ github.event.inputs.gradle_version }}/bin:$PATH"
 
-      # Step 5: 设置 Gradle 构建环境
       - name: Configure Gradle
         run: |
+          mkdir -p ~/.gradle  # 确保 .gradle 目录存在
           echo "org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=512m" >> ~/.gradle/gradle.properties
           echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
           echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
 
-      # Step 6: 进入子目录并构建 APK
       - name: Build the app
         working-directory: ./project/${{ github.event.inputs.project_subdir }}
         run: |
@@ -70,7 +65,6 @@ jobs:
           chmod +x gradlew
           ./gradlew clean assembleDebug --stacktrace
 
-      # Step 7: 上传生成的 APK
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
