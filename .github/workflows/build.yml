@@ -2,37 +2,52 @@ name: android_build
 
 on:
   workflow_dispatch:
+    inputs:
+      project_url:
+        description: 'Enter the URL of the GitHub repository containing the Android project'
+        required: true
+        default: 'https://github.com/BI1PBUTHU/MobileIMSDK'
+        type: string
+
+      project_subdir:
+        description: 'Enter the subdirectory path of the Android project within the repository (relative to root)'
+        required: true
+        default: 'demo_src/TCP_Client/MobileIMSDK4aDemo_tcp'
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: 检出当前仓库代码
       - name: Checkout the code
-      # 拉取 android_builder 的源代码
         uses: actions/checkout@v3
+
+      # Step 2: 设置 JDK 环境
       - name: Set up JDK
-      # 设置 Java 运行环境
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
-          java-version: 1.8
-          # 用 1.8 版本覆盖环境中自带的 Java 11 版本
-      - id: get-project
-      # 读取项目地址
-        name: Get project name
-        run: echo "::set-output name=PROJECT::$(cat project-to-build)"
-      - name: Clone project
-      # 拉取项目源码到虚拟环境
-        run: git clone --depth=1 ${{ steps.get-project.outputs.PROJECT }} project
+          distribution: 'temurin'
+          java-version: 8
+
+      # Step 3: 克隆用户提供的项目仓库
+      - name: Clone project repository
+        run: |
+          echo "Cloning repository: ${{ github.event.inputs.project_url }}"
+          git clone --depth=1 ${{ github.event.inputs.project_url }} project
+
+      # Step 4: 进入子目录并构建 APK
       - name: Build the app
-      # 构建调试版 APK
-        working-directory: ./project
+        working-directory: ./project/${{ github.event.inputs.project_subdir }}
         run: |
           if [ ! -f "gradlew" ]; then gradle wrapper; fi
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
+
+      # Step 5: 上传生成的 APK
       - name: Upload APK
-      # 打包上传生成的 APK 到的网页端
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: my-build-apk
-          path: ./**/*.apk
+          path: ./project/${{ github.event.inputs.project_subdir }}/app/build/outputs/apk/debug/*.apk
