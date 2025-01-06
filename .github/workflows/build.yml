@@ -7,17 +7,14 @@ on:
         description: 'Enter the URL of the Android project repository'
         required: true
         default: 'https://github.com/BI1PBUTHU/MobileIMSDK'
-        type: string
       project_subdir:
         description: 'Enter the subdirectory path of the Android project within the repository (relative to root)'
         required: true
         default: 'demo_src/TCP_Client/MobileIMSDK4aDemo_tcp'
-        type: string
       gradle_version:
         description: 'Enter the Gradle version to use'
         required: true
         default: '8.0'
-        type: string
 
 jobs:
   build:
@@ -49,7 +46,7 @@ jobs:
       - name: Configure Gradle
         run: |
           mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=512m" >> ~/.gradle/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2g" >> ~/.gradle/gradle.properties
           echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
           echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
 
@@ -58,7 +55,7 @@ jobs:
         run: |
           if [ ! -f "gradlew" ]; then gradle wrapper; fi
           chmod +x gradlew
-          ./gradlew clean assembleDebug --stacktrace --warning-mode all
+          ./gradlew clean assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
