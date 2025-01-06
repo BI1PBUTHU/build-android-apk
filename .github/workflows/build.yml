@@ -4,15 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       project_url:
-        description: 'Enter the URL of the GitHub repository containing the Android project'
+        description: 'Enter the URL of the Android project repository'
         required: true
         default: 'https://github.com/BI1PBUTHU/MobileIMSDK'
         type: string
-
       project_subdir:
         description: 'Enter the subdirectory path of the Android project within the repository (relative to root)'
         required: true
         default: 'demo_src/TCP_Client/MobileIMSDK4aDemo_tcp'
+        type: string
+      java_version:
+        description: 'Enter the Java version to use'
+        required: true
+        default: '11'
+        type: string
+      gradle_version:
+        description: 'Enter the Gradle version to use'
+        required: true
+        default: '8.0'
         type: string
 
 jobs:
@@ -24,12 +33,12 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      # Step 2: 设置 JDK 环境
+      # Step 2: 设置自定义 JDK 版本
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 8
+          java-version: ${{ github.event.inputs.java_version }}
 
       # Step 3: 克隆用户提供的项目仓库
       - name: Clone project repository
@@ -37,15 +46,31 @@ jobs:
           echo "Cloning repository: ${{ github.event.inputs.project_url }}"
           git clone --depth=1 ${{ github.event.inputs.project_url }} project
 
-      # Step 4: 进入子目录并构建 APK
+      # Step 4: 安装自定义 Gradle 版本
+      - name: Install Gradle
+        run: |
+          echo "Installing Gradle version: ${{ github.event.inputs.gradle_version }}"
+          wget https://services.gradle.org/distributions/gradle-${{ github.event.inputs.gradle_version }}-bin.zip
+          mkdir -p /home/runner/gradle
+          unzip -d /home/runner/gradle gradle-${{ github.event.inputs.gradle_version }}-bin.zip
+          export PATH="/home/runner/gradle/gradle-${{ github.event.inputs.gradle_version }}/bin:$PATH"
+
+      # Step 5: 设置 Gradle 构建环境
+      - name: Configure Gradle
+        run: |
+          echo "org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=512m" >> ~/.gradle/gradle.properties
+          echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
+
+      # Step 6: 进入子目录并构建 APK
       - name: Build the app
         working-directory: ./project/${{ github.event.inputs.project_subdir }}
         run: |
           if [ ! -f "gradlew" ]; then gradle wrapper; fi
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew clean assembleDebug --stacktrace
 
-      # Step 5: 上传生成的 APK
+      # Step 7: 上传生成的 APK
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
