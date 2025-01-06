@@ -13,11 +13,6 @@ on:
         required: true
         default: 'demo_src/TCP_Client/MobileIMSDK4aDemo_tcp'
         type: string
-      java_version:
-        description: 'Enter the Java version to use'
-        required: true
-        default: '17'
-        type: string
       gradle_version:
         description: 'Enter the Gradle version to use'
         required: true
@@ -36,7 +31,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: ${{ github.event.inputs.java_version }}
+          java-version: 17
 
       - name: Clone project repository
         run: |
@@ -53,7 +48,7 @@ jobs:
 
       - name: Configure Gradle
         run: |
-          mkdir -p ~/.gradle  # 确保 .gradle 目录存在
+          mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=512m" >> ~/.gradle/gradle.properties
           echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
           echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
@@ -63,7 +58,7 @@ jobs:
         run: |
           if [ ! -f "gradlew" ]; then gradle wrapper; fi
           chmod +x gradlew
-          ./gradlew clean assembleDebug --stacktrace
+          ./gradlew clean assembleDebug --stacktrace --warning-mode all
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
