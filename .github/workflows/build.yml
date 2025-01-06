@@ -16,7 +16,7 @@ on:
       java_version:
         description: 'Enter the Java version to use'
         required: true
-        default: '11'
+        default: '17'
         type: string
       gradle_version:
         description: 'Enter the Gradle version to use'
